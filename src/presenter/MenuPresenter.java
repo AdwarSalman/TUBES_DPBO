@@ -44,9 +44,18 @@ public class MenuPresenter {
 
         int ammoAwal = model.getLastAmmo(username);
 
-        // BUKA GAME
-        GamePresenter game = new GamePresenter(model, username, ammoAwal);
+        // Tutup menu sementara
+        view.setVisible(false);
+
+        // Oper 'this' (MenuPresenter) ke GamePresenter
+        GamePresenter game = new GamePresenter(model, username, ammoAwal, this);
         game.startGame();
+    }
+
+    // Tambahkan method agar bisa dipanggil dari GamePresenter
+    public void showMenuAgain() {
+        refreshTable();       // Update skor terbaru
+        view.setVisible(true); // Munculkan lagi
     }
 
     public void onQuitClicked() {

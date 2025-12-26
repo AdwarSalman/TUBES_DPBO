@@ -3,8 +3,8 @@ package model;
 public class Player {
 
     public int x, y;
-    public int w = 30, h = 30;
-    public int speed = 5;
+    public int w = 50, h = 50;
+    public int speed = 3;
 
     public int ammo;
 

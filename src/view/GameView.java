@@ -17,10 +17,17 @@ public class GameView extends JPanel {
         setFocusable(true);
 
         // Key listener untuk kontrol game
+        // Di dalam Constructor GameView
         addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
                 presenter.onKeyPressed(e.getKeyCode());
+            }
+
+            // [BARU] Tambahkan ini untuk mendeteksi tombol dilepas
+            @Override
+            public void keyReleased(KeyEvent e) {
+                presenter.onKeyReleased(e.getKeyCode());
             }
         });
     }

@@ -8,10 +8,13 @@ public class GameState {
     public ArrayList<Alien> aliens;
     public ArrayList<Bullet> bullets;
     public ArrayList<Rock> rocks;
+    public ArrayList<Explosion> explosions;
 
     public boolean running;
     public int score;        // skor round ini
     public int missCount;    // peluru alien meleset round ini
+
+    public int wave = 1;
 
     public int screenW = 800;
     public int screenH = 600;
@@ -20,15 +23,18 @@ public class GameState {
         aliens = new ArrayList<>();
         bullets = new ArrayList<>();
         rocks = new ArrayList<>();
+        explosions = new ArrayList<>();
     }
 
     public void reset(int ammoAwal) {
         aliens.clear();
         bullets.clear();
         rocks.clear();
+        explosions.clear();
 
         score = 0;
         missCount = 0;
+        wave = 1;
         running = true;
 
         player = new Player(screenW / 2, screenH / 2, ammoAwal);
