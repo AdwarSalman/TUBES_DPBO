@@ -5,7 +5,7 @@ import view.GameView;
 
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
-import javax.sound.sampled.*; // [BARU] Import untuk Audio
+import javax.sound.sampled.*;
 import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
@@ -34,8 +34,8 @@ public class GamePresenter implements Runnable {
     private BufferedImage imgClouds;
     private BufferedImage imgRock;
 
-    // --- [BARU] ASET AUDIO ---
-    private Clip musicClip; // Variabel pemutar musik
+    // --- ASET AUDIO ---
+    private Clip musicClip;
 
     // --- VARIABEL PARALLAX SCROLLING ---
     private int bgY = 0;
@@ -50,44 +50,55 @@ public class GamePresenter implements Runnable {
     private GameView gameView;
     private JFrame frame;
     private Thread loop;
-    private int ammoAwal;
 
     private Random rand = new Random();
     private int alienShootTimer = 0;
     private int nextShootTime = 60;
 
-    public GamePresenter(BenefitModel model, String username, int ammoAwal, MenuPresenter menuPresenter) {
+    // [UBAH DI SINI] Constructor menerima data savedScore, savedMiss, savedAmmo
+    public GamePresenter(BenefitModel model, String username, int savedScore, int savedMiss, int savedAmmo, MenuPresenter menuPresenter) {
         this.model = model;
         this.username = username;
-        this.ammoAwal = ammoAwal;
         this.menuPresenter = menuPresenter;
 
         state = new GameState();
-        state.reset(ammoAwal);
 
-        // === LOAD SEMUA ASET ===
+        // [PENTING] Masukkan data lama ke state agar bisa lanjut main
+        // (Pastikan file GameState.java sudah kamu update juga sesuai instruksi sebelumnya)
+        state.reset(savedScore, savedMiss, savedAmmo);
+
+        loadAssets(); // Memuat gambar dipisah biar rapi
+    }
+
+    // Method untuk memuat semua gambar & aset
+    private void loadAssets() {
         try {
-            // 1. Load Gambar (Seperti Sebelumnya)
+            // 1. Load Gambar Alien
             imgAliens = new BufferedImage[3];
             imgAliens[0] = loadSprite("/assets/alien_small.png");
             imgAliens[1] = loadSprite("/assets/alien_medium.png");
             imgAliens[2] = loadSprite("/assets/alien_big.png");
 
+            // 2. Load Player
             imgPlayerCenter = ImageIO.read(getClass().getResource("/assets/player_center.png"));
             imgPlayerLeft   = ImageIO.read(getClass().getResource("/assets/player_left.png"));
             imgPlayerRight  = ImageIO.read(getClass().getResource("/assets/player_right.png"));
 
+            // 3. Load Bullet
             imgBulletPlayer = ImageIO.read(getClass().getResource("/assets/bullet_player.png"));
             imgBulletAlien  = ImageIO.read(getClass().getResource("/assets/bullet_alien.png"));
 
+            // 4. Load Explosion
             imgExplosion = new BufferedImage[10];
             for (int i = 0; i < 10; i++) {
                 imgExplosion[i] = ImageIO.read(getClass().getResource("/assets/explode_" + i + ".png"));
             }
 
+            // 5. Load Background
             imgBackground = ImageIO.read(getClass().getResource("/assets/bg_desert.png"));
             imgClouds = ImageIO.read(getClass().getResource("/assets/bg_clouds.png"));
 
+            // 6. Load & Resize Rock
             BufferedImage originalRock = ImageIO.read(getClass().getResource("/assets/rock.png"));
             int targetSize = 70;
             imgRock = new BufferedImage(targetSize, targetSize, BufferedImage.TYPE_INT_ARGB);
@@ -115,14 +126,13 @@ public class GamePresenter implements Runnable {
 
         frame.setVisible(true);
 
-        // [BARU] PUTAR MUSIK SAAT GAME MULAI
+        // Putar musik
         playMusic("/assets/music_bg.wav");
 
         loop = new Thread(this);
         loop.start();
     }
 
-    // --- [BARU] METHOD AUDIO ---
     private void playMusic(String path) {
         try {
             URL url = getClass().getResource(path);
@@ -133,12 +143,7 @@ public class GamePresenter implements Runnable {
             AudioInputStream audioInput = AudioSystem.getAudioInputStream(url);
             musicClip = AudioSystem.getClip();
             musicClip.open(audioInput);
-
-            // Atur volume sedikit lebih kecil (opsional) agar tidak memekakkan telinga
-            FloatControl gainControl = (FloatControl) musicClip.getControl(FloatControl.Type.MASTER_GAIN);
-            // gainControl.setValue(-10.0f); // Uncomment baris ini untuk mengecilkan volume (-10 decibels)
-
-            musicClip.loop(Clip.LOOP_CONTINUOUSLY); // Loop selamanya
+            musicClip.loop(Clip.LOOP_CONTINUOUSLY);
             musicClip.start();
 
         } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
@@ -345,14 +350,18 @@ public class GamePresenter implements Runnable {
     }
 
     private void gameOver() {
-        stopMusic(); // [BARU] Stop musik saat game over
+        stopMusic();
+
+        // [UBAH] Simpan Skor & Ammo Terakhir ke Database
+        // Karena sistemnya sekarang "Lanjut Main", kita timpa data lama dengan data terbaru
         model.updateStats(username, state.score, state.missCount, state.player.ammo);
-        JOptionPane.showMessageDialog(frame, "Game Over!");
+
+        JOptionPane.showMessageDialog(frame, "Game Over! Skor Akhir: " + state.score);
         backToMenu();
     }
 
     private void backToMenu() {
-        stopMusic(); // [BARU] Stop musik saat kembali ke menu
+        stopMusic();
         state.running = false;
         frame.dispose();
         if (menuPresenter != null) menuPresenter.showMenuAgain();

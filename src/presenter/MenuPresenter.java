@@ -2,7 +2,6 @@ package presenter;
 
 import model.BenefitModel;
 import view.MenuView;
-
 import javax.swing.*;
 
 public class MenuPresenter {
@@ -13,20 +12,16 @@ public class MenuPresenter {
     public MenuPresenter(BenefitModel model, MenuView view) {
         this.model = model;
         this.view = view;
-
         refreshTable();
     }
 
     public void refreshTable() {
         var list = model.getAllUsers();
-
         Object[][] data = new Object[list.size()][4];
         for (int i = 0; i < list.size(); i++) {
-            data[i] = list.get(i);   // username, skor, miss, sisa peluru
+            data[i] = list.get(i);
         }
-
         String[] cols = {"Username", "Skor", "Peluru Meleset", "Sisa Peluru"};
-
         view.updateTable(data, cols);
     }
 
@@ -42,20 +37,46 @@ public class MenuPresenter {
             model.insertUser(username);
         }
 
-        int ammoAwal = model.getLastAmmo(username);
+        int[] stats = model.getUserStats(username);
+        int savedScore = stats[0];
+        int savedMiss = stats[1];
+        int savedAmmo = stats[2];
 
-        // Tutup menu sementara
         view.setVisible(false);
 
-        // Oper 'this' (MenuPresenter) ke GamePresenter
-        GamePresenter game = new GamePresenter(model, username, ammoAwal, this);
+        GamePresenter game = new GamePresenter(model, username, savedScore, savedMiss, savedAmmo, this);
         game.startGame();
     }
 
-    // Tambahkan method agar bisa dipanggil dari GamePresenter
+    // [BARU] Logika Tombol Hapus
+    public void onDeleteClicked() {
+        String username = view.getUsernameInput();
+
+        if (username.isEmpty()) {
+            JOptionPane.showMessageDialog(view, "Pilih user di tabel atau ketik username yang ingin dihapus!");
+            return;
+        }
+
+        if (!model.userExists(username)) {
+            JOptionPane.showMessageDialog(view, "User tidak ditemukan!");
+            return;
+        }
+
+        int confirm = JOptionPane.showConfirmDialog(view,
+                "Yakin ingin menghapus progress milik '" + username + "'?",
+                "Hapus Data", JOptionPane.YES_NO_OPTION);
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            model.deleteUser(username);
+            view.setUsernameInput(""); // Kosongkan input
+            refreshTable();
+            JOptionPane.showMessageDialog(view, "Data berhasil dihapus.");
+        }
+    }
+
     public void showMenuAgain() {
-        refreshTable();       // Update skor terbaru
-        view.setVisible(true); // Munculkan lagi
+        refreshTable();
+        view.setVisible(true);
     }
 
     public void onQuitClicked() {

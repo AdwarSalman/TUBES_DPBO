@@ -9,17 +9,18 @@ public class DBConnection {
     private static Connection conn;
 
     public static Connection getConnection() {
-        if (conn == null) {
-            try {
+        try {
+            // Cek apakah koneksi null ATAU sudah tertutup
+            if (conn == null || conn.isClosed()) {
                 // 1. Load driver SQLite
                 Class.forName("org.sqlite.JDBC");
 
                 // 2. Buat koneksi ke file database
                 conn = DriverManager.getConnection("jdbc:sqlite:tbenefit.db");
-
-            } catch (Exception e) {
-                e.printStackTrace();
             }
+        } catch (Exception e) {
+            System.err.println("GAGAL KONEKSI DATABASE:");
+            e.printStackTrace();
         }
         return conn;
     }

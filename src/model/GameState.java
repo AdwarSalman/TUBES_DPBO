@@ -11,8 +11,8 @@ public class GameState {
     public ArrayList<Explosion> explosions;
 
     public boolean running;
-    public int score;        // skor round ini
-    public int missCount;    // peluru alien meleset round ini
+    public int score;
+    public int missCount;
 
     public int wave = 1;
 
@@ -26,27 +26,28 @@ public class GameState {
         explosions = new ArrayList<>();
     }
 
-    public void reset(int ammoAwal) {
+    // [UBAH] Reset sekarang menerima data continue (skor, miss, ammo)
+    public void reset(int savedScore, int savedMiss, int savedAmmo) {
         aliens.clear();
         bullets.clear();
         rocks.clear();
         explosions.clear();
 
-        score = 0;
-        missCount = 0;
-        wave = 1;
-        running = true;
+        // Load data lama
+        this.score = savedScore;
+        this.missCount = savedMiss;
 
-        player = new Player(screenW / 2, screenH / 2, ammoAwal);
+        this.wave = 1;
+        this.running = true;
 
-        // ================================
-        // Generate batu secara random (3–5)
-        // ================================
-        int jumlahBatu = 3 + (int)(Math.random() * 3); // 3–5 batu
+        // Init player dengan ammo tersimpan
+        player = new Player(screenW / 2, screenH / 2, savedAmmo);
+
+        // Generate batu random
+        int jumlahBatu = 3 + (int)(Math.random() * 3);
         for (int i = 0; i < jumlahBatu; i++) {
             int rx = (int)(Math.random() * (screenW - 50));
             int ry = (int)(Math.random() * (screenH - 50));
-
             rocks.add(new Rock(rx, ry));
         }
     }

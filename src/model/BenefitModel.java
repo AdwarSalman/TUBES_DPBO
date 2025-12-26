@@ -13,15 +13,14 @@ public class BenefitModel {
     public boolean userExists(String username) {
         String sql = "SELECT username FROM tbenefit WHERE username = ?";
         try {
-            PreparedStatement ps = DBConnection.getConnection().prepareStatement(sql);
+            Connection c = DBConnection.getConnection();
+            if (c == null) return false;
+            PreparedStatement ps = c.prepareStatement(sql);
             ps.setString(1, username);
             ResultSet rs = ps.executeQuery();
-
             boolean exists = rs.next();
-            rs.close();
-            ps.close();
+            rs.close(); ps.close();
             return exists;
-
         } catch (Exception e) {
             e.printStackTrace();
             return false;
@@ -31,60 +30,54 @@ public class BenefitModel {
     public void insertUser(String username) {
         String sql = "INSERT INTO tbenefit (username, skor, peluru_meleset, sisa_peluru) VALUES (?, 0, 0, 0)";
         try {
-            PreparedStatement ps = DBConnection.getConnection().prepareStatement(sql);
+            Connection c = DBConnection.getConnection();
+            if (c == null) return;
+            PreparedStatement ps = c.prepareStatement(sql);
             ps.setString(1, username);
             ps.executeUpdate();
             ps.close();
-
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public int getLastAmmo(String username) {
-        String sql = "SELECT sisa_peluru FROM tbenefit WHERE username = ?";
+    // [BARU] Hapus User
+    public void deleteUser(String username) {
+        String sql = "DELETE FROM tbenefit WHERE username = ?";
         try {
-            PreparedStatement ps = DBConnection.getConnection().prepareStatement(sql);
+            Connection c = DBConnection.getConnection();
+            if (c == null) return;
+            PreparedStatement ps = c.prepareStatement(sql);
             ps.setString(1, username);
-
-            ResultSet rs = ps.executeQuery();
-            int result = rs.next() ? rs.getInt("sisa_peluru") : 0;
-
-            rs.close();
+            ps.executeUpdate();
             ps.close();
-            return result;
-
         } catch (Exception e) {
             e.printStackTrace();
-            return 0;
         }
     }
 
-    public void updateStats(String username, int skorRound, int missRound, int sisaPeluru) {
-        // Ambil data lama (skor & miss)
-        String sqlSelect = "SELECT skor, peluru_meleset FROM tbenefit WHERE username = ?";
-
-        int skor = 0;
-        int miss = 0;
-
+    public int[] getUserStats(String username) {
+        String sql = "SELECT skor, peluru_meleset, sisa_peluru FROM tbenefit WHERE username = ?";
+        int[] stats = {0, 0, 0};
         try {
-            PreparedStatement psSel = DBConnection.getConnection().prepareStatement(sqlSelect);
-            psSel.setString(1, username);
-            ResultSet rs = psSel.executeQuery();
-
+            Connection c = DBConnection.getConnection();
+            if (c == null) return stats;
+            PreparedStatement ps = c.prepareStatement(sql);
+            ps.setString(1, username);
+            ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                skor = rs.getInt("skor");
-                miss = rs.getInt("peluru_meleset");
+                stats[0] = rs.getInt("skor");
+                stats[1] = rs.getInt("peluru_meleset");
+                stats[2] = rs.getInt("sisa_peluru");
             }
-
-            rs.close();
-            psSel.close();
-
+            rs.close(); ps.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return stats;
+    }
 
-        // Update nilai baru
+    public void updateStats(String username, int totalSkor, int totalMiss, int sisaPeluru) {
         String sqlUpdate = """
                 UPDATE tbenefit
                 SET skor = ?,
@@ -92,31 +85,29 @@ public class BenefitModel {
                     sisa_peluru = ?
                 WHERE username = ?;
                 """;
-
         try {
-            PreparedStatement ps = DBConnection.getConnection().prepareStatement(sqlUpdate);
-            ps.setInt(1, skor + skorRound);
-            ps.setInt(2, miss + missRound);
+            Connection c = DBConnection.getConnection();
+            if (c == null) return;
+            PreparedStatement ps = c.prepareStatement(sqlUpdate);
+            ps.setInt(1, totalSkor);
+            ps.setInt(2, totalMiss);
             ps.setInt(3, sisaPeluru);
             ps.setString(4, username);
-
             ps.executeUpdate();
             ps.close();
-
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     public List<String[]> getAllUsers() {
-
         List<String[]> data = new ArrayList<>();
-
-        String sql = "SELECT * FROM tbenefit";
+        String sql = "SELECT * FROM tbenefit ORDER BY skor DESC";
         try {
-            Statement st = DBConnection.getConnection().createStatement();
+            Connection c = DBConnection.getConnection();
+            if (c == null) return data;
+            Statement st = c.createStatement();
             ResultSet rs = st.executeQuery(sql);
-
             while (rs.next()) {
                 data.add(new String[]{
                         rs.getString("username"),
@@ -125,14 +116,10 @@ public class BenefitModel {
                         String.valueOf(rs.getInt("sisa_peluru"))
                 });
             }
-
-            rs.close();
-            st.close();
-
+            rs.close(); st.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
-
         return data;
     }
 }
